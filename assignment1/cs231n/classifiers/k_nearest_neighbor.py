@@ -1,8 +1,17 @@
 import numpy as np
 
-def L2_distance(x, y):
+def L1_distance(x, y):
     """
     Compute the Euclid distance between two np.array objects.
+    Input : 
+        x,y : np.array object that have the same size.
+    """
+    d = np.ravel(y - x)
+    return np.sum(np.absolute(d))
+
+def L2_distance(x, y):
+    """
+    Compute the Manhattan distance between two np.array objects.
     Input : 
         x,y : np.array object that have the same size.
     """
@@ -26,7 +35,9 @@ class KNearestNeighbor(object):
     - y: A numpy array of shape (N,) containing the training labels, where
          y[i] is the label for X[i].
     """
-    self.X_train = X
+    self.X_mean = np.mean(X, axis=0, keepdims=True)
+    self.X_std  = np.std(X, axis=0, keepdims=True)
+    self.X_train = X # (X - self.X_mean) #/ self.X_std
     self.y_train = y
     
   def predict(self, X, k=1, num_loops=0):
@@ -69,6 +80,7 @@ class KNearestNeighbor(object):
       is the Euclidean distance between the ith test point and the jth training
       point.
     """
+    # X = (X - self.X_mean)#/self.X_std
     num_test = X.shape[0]
     num_train = self.X_train.shape[0]
     dists = np.zeros((num_test, num_train))
@@ -102,7 +114,8 @@ class KNearestNeighbor(object):
       # Compute the l2 distance between the ith test point and all training #
       # points, and store the result in dists[i, :].                        #
       #######################################################################
-      pass
+      d = self.X_train - X[i]
+      dists[i] = np.sqrt(np.sum(d**2, axis=1))
       #######################################################################
       #                         END OF YOUR CODE                            #
       #######################################################################
