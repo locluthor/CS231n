@@ -1,22 +1,5 @@
 import numpy as np
 
-def L1_distance(x, y):
-    """
-    Compute the Euclid distance between two np.array objects.
-    Input : 
-        x,y : np.array object that have the same size.
-    """
-    d = np.ravel(y - x)
-    return np.sum(np.absolute(d))
-
-def L2_distance(x, y):
-    """
-    Compute the Manhattan distance between two np.array objects.
-    Input : 
-        x,y : np.array object that have the same size.
-    """
-    d = np.ravel(y - x)
-    return np.sqrt(np.dot(d,d))
 
 class KNearestNeighbor(object):
   """ a kNN classifier with L2 distance """
@@ -92,7 +75,7 @@ class KNearestNeighbor(object):
         # training point, and store the result in dists[i, j]. You should   #
         # not use a loop over dimension.                                    #
         #####################################################################
-        dists[i, j] = L2_distance(self.X_train[j,:], X[i,:])
+        dists[i, j] = np.linalg.norm(self.X_train[j,:] - X[i,:])
         #####################################################################
         #                       END OF YOUR CODE                            #
         #####################################################################
@@ -114,8 +97,7 @@ class KNearestNeighbor(object):
       # Compute the l2 distance between the ith test point and all training #
       # points, and store the result in dists[i, :].                        #
       #######################################################################
-      d = self.X_train - X[i]
-      dists[i] = np.sqrt(np.sum(d**2, axis=1))
+      dists[i] = np.linalg.norm(self.X_train - X[i], axis=1)
       #######################################################################
       #                         END OF YOUR CODE                            #
       #######################################################################
