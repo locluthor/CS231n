@@ -94,8 +94,9 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  dW += np.sum(X, axis=0)
-  dW[Y==1] *= -1 # derivative of the weights of correct class is -X
+  margin[np.where(margin>0)] = 1
+  margin[Y==1] = -1*np.sum(margin,axis=1)
+  dW = np.matmul(X.T, margin)
   dW /= num_train
   dW += 2*reg*W
   #############################################################################
