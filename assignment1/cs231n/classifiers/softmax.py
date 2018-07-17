@@ -86,7 +86,7 @@ def softmax_loss_vectorized(W, X, y, reg):
   loss /= num_train
   
   dW += np.matmul(X.T, Scores / np.sum(Scores, axis=1).reshape(num_train, -1))
-  dW -= np.matmul(X.T, Y)
+  dW -= np.matmul(X.T, Y)  # gradient respect to the weights of correct class have extra term -X[i]
   dW /= num_train
   dW[0:-1] += 2*reg*W[0:-1] 
   #############################################################################
