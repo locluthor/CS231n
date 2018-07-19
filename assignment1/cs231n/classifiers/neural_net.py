@@ -67,7 +67,10 @@ class TwoLayerNet(object):
     W1, b1 = self.params['W1'], self.params['b1']
     W2, b2 = self.params['W2'], self.params['b2']
     N, D = X.shape
-
+    num_train = X.shape[0]
+    num_classes = W2.shape[1]
+    Y = np.zeros((num_train, num_classes))
+    Y[np.arange(num_train), y] = 1    
     # Compute the forward pass
     scores = None
     #############################################################################
@@ -75,7 +78,9 @@ class TwoLayerNet(object):
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
-    pass
+    H = np.dot(X, W1) + b1
+    H[H<0] = 0 # apply RELU activation
+    scores = np.dot(H, W2)+ b2
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -92,7 +97,12 @@ class TwoLayerNet(object):
     # in the variable loss, which should be a scalar. Use the Softmax           #
     # classifier loss.                                                          #
     #############################################################################
-    pass
+    scores -= np.max(scores, axis=1).reshape(num_train, -1)
+    exp_scores = np.exp(scores)
+  
+    loss = np.sum(-np.log(exp_scores[Y==1]/ np.sum(exp_scores,axis=1)))
+    loss /= num_train
+    loss += reg * (np.sum(W1*W1) + np.sum(W2*W2))
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -104,7 +114,33 @@ class TwoLayerNet(object):
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
-    pass
+    DL_DW1 = np.zeros(W1.shape)
+    DL_DW2 = np.zeros((W2.shape[0] + 1, num_classes))
+    
+    DL_DS  = np.zeros(scores.shape)
+    DL_DS  += exp_scores / np.sum(exp_scores, axis=1).reshape(num_train, -1)
+    H_ = np.hstack([H, np.ones((H.shape[0], 1))])
+    DL_DS  -= np.dot(np.ones((scores.shape[0], 1)).T, Y)
+    DL_DW2 = np.dot(H_.T, DL_DS)
+    DL_DW2 /= num_train
+    
+    DL_Drelu = np.dot(DL_DS, np.hstack([W2, np.ones((W2.shape[0], 1))]).T)
+    X_ = np.hstack([X, np.ones((X.shape[0], 1))])
+    DRelu_DH = H
+    DRelu_DH[DRelu_DH>0] = 1
+    DRelu_DW1 = np.dot(X_.T, DRelu_DH)
+    
+    print(DRelu_DW1.shape)
+    print(DL_Drelu.shape)
+#    DL_DW2 = np.matmul(H.T, exp_scores / np.sum(exp_scores, axis=1).reshape(num_train, -1))
+#    DL_DW2 -= np.matmul(H.T, Y)
+#    DL_DW2 /= num_train
+#    
+#    DL_Db2 = np.matmul(np.ones((1, num_train)), exp_scores / np.sum(exp_scores, axis=1).reshape(num_train, -1))    
+#    DL_Db2 -= np.matmul(np.ones((1, num_train)), Y)
+#    DL_Db2 /= num_train
+#    
+#    DL_DW1 = 
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
