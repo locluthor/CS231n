@@ -78,8 +78,9 @@ class TwoLayerNet(object):
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
-    H = np.dot(X, W1) + b1
-    H[H<0] = 0 # apply RELU activation
+    Z = np.dot(X, W1) + b1
+    H = np.zeros(Z.shape)
+    H[Z<0] = 0 # apply RELU activation
     scores = np.dot(H, W2)+ b2
     #############################################################################
     #                              END OF YOUR CODE                             #
@@ -114,9 +115,8 @@ class TwoLayerNet(object):
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
-    DL_DW1 = np.zeros(W1.shape)
-    DL_DW2 = np.zeros((W2.shape[0] + 1, num_classes))
-    
+    DL_DW1 = np.zeros((W1.shape[0]+1, W1.shape[1]))
+    DL_DW2 = np.zeros((W2.shape[0]+1, W2.shape[1]))
     DL_DS  = np.zeros(scores.shape)
     DL_DS  += exp_scores / np.sum(exp_scores, axis=1).reshape(num_train, -1)
     H_ = np.hstack([H, np.ones((H.shape[0], 1))])
@@ -124,23 +124,22 @@ class TwoLayerNet(object):
     DL_DW2 = np.dot(H_.T, DL_DS)
     DL_DW2 /= num_train
     
-    DL_Drelu = np.dot(DL_DS, np.hstack([W2, np.ones((W2.shape[0], 1))]).T)
-    X_ = np.hstack([X, np.ones((X.shape[0], 1))])
-    DRelu_DH = H
-    DRelu_DH[DRelu_DH>0] = 1
-    DRelu_DW1 = np.dot(X_.T, DRelu_DH)
+    DL_DH = np.matmul(DL_DS, W2.T)
+    DH_DZ = Z.copy()
+    DH_DZ[Z>0]=1
+    DH_DZ[Z<0]=0
+    DL_DZ = np.multiply(DL_DH, DH_DZ)
+    DZ_DW1 = np.matmul(np.hstack([X, np.ones((X.shape[0], 1))]).T, DL_DZ)
+    DZ_DW1 /= num_train
     
-    print(DRelu_DW1.shape)
-    print(DL_Drelu.shape)
-#    DL_DW2 = np.matmul(H.T, exp_scores / np.sum(exp_scores, axis=1).reshape(num_train, -1))
-#    DL_DW2 -= np.matmul(H.T, Y)
-#    DL_DW2 /= num_train
-#    
-#    DL_Db2 = np.matmul(np.ones((1, num_train)), exp_scores / np.sum(exp_scores, axis=1).reshape(num_train, -1))    
-#    DL_Db2 -= np.matmul(np.ones((1, num_train)), Y)
-#    DL_Db2 /= num_train
-#    
-#    DL_DW1 = 
+    grads['W1'] = DL_DW1[:-1,:]
+    grads['b1'] = DL_DW1[-1,:]
+    grads['W2'] = DL_DW2[:-1,:]
+    grads['b2'] = DL_DW2[-1,:]
+    
+    grads['W1'] += 2*reg*grads['W1']
+    grads['W2'] += 2*reg*grads['W2']
+    
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
