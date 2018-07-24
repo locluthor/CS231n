@@ -79,7 +79,7 @@ class TwoLayerNet(object):
     # shape (N, C).                                                             #
     #############################################################################
     Z = np.dot(X, W1) + b1
-    H = np.zeros(Z.shape)
+    H = Z.copy()
     H[Z<0] = 0 # apply RELU activation
     scores = np.dot(H, W2)+ b2
     #############################################################################
@@ -119,8 +119,8 @@ class TwoLayerNet(object):
     DL_DW2 = np.zeros((W2.shape[0]+1, W2.shape[1]))
     DL_DS  = np.zeros(scores.shape)
     DL_DS  += exp_scores / np.sum(exp_scores, axis=1).reshape(num_train, -1)
+    DL_DS[Y==1] -= 1
     H_ = np.hstack([H, np.ones((H.shape[0], 1))])
-    DL_DS  -= np.dot(np.ones((scores.shape[0], 1)).T, Y)
     DL_DW2 = np.dot(H_.T, DL_DS)
     DL_DW2 /= num_train
     
