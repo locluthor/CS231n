@@ -115,27 +115,28 @@ class TwoLayerNet(object):
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
-    DL_DW1 = np.zeros((W1.shape[0]+1, W1.shape[1]))
-    DL_DW2 = np.zeros((W2.shape[0]+1, W2.shape[1]))
-    DL_DS  = np.zeros(scores.shape)
-    DL_DS  += exp_scores / np.sum(exp_scores, axis=1).reshape(num_train, -1)
-    DL_DS[Y==1] -= 1
+    DW1 = np.zeros((W1.shape[0]+1, W1.shape[1]))
+    DW2 = np.zeros((W2.shape[0]+1, W2.shape[1]))
+#    DS  = np.zeros(scores.shape)
+    DS  = exp_scores / np.sum(exp_scores, axis=1).reshape(num_train, -1)
+    DS[range(num_train), y] -= 1
+    DS /= num_train
     H_ = np.hstack([H, np.ones((H.shape[0], 1))])
-    DL_DW2 = np.dot(H_.T, DL_DS)
-    DL_DW2 /= num_train
+    DW2 = np.dot(H_.T, DS)
+#    DW2 /= num_train
     
-    DL_DH = np.matmul(DL_DS, W2.T)
-    DH_DZ = Z.copy()
-    DH_DZ[Z>0]=1
-    DH_DZ[Z<0]=0
-    DL_DZ = np.multiply(DL_DH, DH_DZ)
-    DZ_DW1 = np.matmul(np.hstack([X, np.ones((X.shape[0], 1))]).T, DL_DZ)
-    DZ_DW1 /= num_train
+    DH = np.matmul(DS, W2.T)
+    DZ = Z.copy()
+    DZ[Z>0]=1
+    DZ[Z<0]=0
+    DZ = np.multiply(DH, DZ)
+    DW1 = np.matmul(np.hstack([X, np.ones((X.shape[0], 1))]).T, DZ)
+#    DW1 /= num_train
     
-    grads['W1'] = DL_DW1[:-1,:]
-    grads['b1'] = DL_DW1[-1,:]
-    grads['W2'] = DL_DW2[:-1,:]
-    grads['b2'] = DL_DW2[-1,:]
+    grads['W1'] = DW1[:-1,:]
+    grads['b1'] = DW1[-1,:]
+    grads['W2'] = DW2[:-1,:]
+    grads['b2'] = DW2[-1,:]
     
     grads['W1'] += 2*reg*grads['W1']
     grads['W2'] += 2*reg*grads['W2']
