@@ -119,7 +119,7 @@ class TwoLayerNet(object):
     DW2 = np.zeros((W2.shape[0]+1, W2.shape[1]))
 #    DS  = np.zeros(scores.shape)
     DS  = exp_scores / np.sum(exp_scores, axis=1).reshape(num_train, -1)
-    DS[range(num_train), y] -= 1
+    DS[np.arange(num_train), y] -= 1
     DS /= num_train
     H_ = np.hstack([H, np.ones((H.shape[0], 1))])
     DW2 = np.dot(H_.T, DS)
@@ -132,14 +132,13 @@ class TwoLayerNet(object):
     DZ = np.multiply(DH, DZ)
     DW1 = np.matmul(np.hstack([X, np.ones((X.shape[0], 1))]).T, DZ)
 #    DW1 /= num_train
-    
+    grads['W2'] = DW2[:-1,:]
+    grads['b2'] = DW2[-1,:]    
     grads['W1'] = DW1[:-1,:]
     grads['b1'] = DW1[-1,:]
-    grads['W2'] = DW2[:-1,:]
-    grads['b2'] = DW2[-1,:]
-    
-    grads['W1'] += 2*reg*grads['W1']
-    grads['W2'] += 2*reg*grads['W2']
+
+    grads['W1'] += 2*reg*W1
+    grads['W2'] += 2*reg*W2
     
     #############################################################################
     #                              END OF YOUR CODE                             #
