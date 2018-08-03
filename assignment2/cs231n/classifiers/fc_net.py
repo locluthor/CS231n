@@ -189,12 +189,13 @@ class FullyConnectedNet(object):
             if i == 0:
                 self.params[keyW] = np.random.randn(input_dim, hidden_dims[i]) * weight_scale
                 self.params[keyb] = np.zeros(hidden_dims[i])
-            elif i == len(hidden_dims):
-                self.params[keyW] = np.random.randn(hidden_dims[i], num_classes) * weight_scale
+            elif i == self.num_layers - 1:
+                self.params[keyW] = np.random.randn(hidden_dims[i-1], num_classes) * weight_scale
                 self.params[keyb] = np.zeros(num_classes)
             else:
                 self.params[keyW] = np.random.randn(hidden_dims[i-1], hidden_dims[i]) * weight_scale
                 self.params[keyb] = np.zeros(hidden_dims[i])
+                
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -259,8 +260,10 @@ class FullyConnectedNet(object):
             b = self.params['b' + str(i+1)]
             if i == 0:
                 H, fcache = affine_relu_forward(X, W, b)
-            elif i == len(self.num_layers - 1):
+            elif i == self.num_layers - 1:
                 scores, fcache = affine_forward(H, W, b)
+            else:
+                H, fcache = affine_relu_forward(H, W, b)
             caches.append(fcache)
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -284,7 +287,16 @@ class FullyConnectedNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        pass
+        loss, dscores = softmax_loss(scores, y)
+        reg_loss = self.reg * np.sum( [np.sum(np.square(self.params['W'+str(i+1)])) for i in range(self.num_layers)] )
+        loss += 0.5*reg_loss        
+        
+        dH, grads['W'+str(self.num_layers)], grads['b'+str(self.num_layers)] = affine_backward(dscores, caches[-1])
+        for i in range(self.num_layers - 1, 0, -1):
+            dH, grads['W'+str(i)], grads['b'+str(i)] = affine_relu_backward(dH, caches[i-1])
+            
+        for i in range(self.num_layers):
+            grads['W'+str(i+1)] += self.reg * self.params['W'+str(i+1)]
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
