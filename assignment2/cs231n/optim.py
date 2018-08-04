@@ -100,7 +100,10 @@ def rmsprop(w, dw, config=None):
     # in the next_w variable. Don't forget to update cache value stored in    #
     # config['cache'].                                                        #
     ###########################################################################
-    pass
+    cache = config.get('cache', np.zeros_like(w))
+    cache = config['decay_rate']*cache + (1-config['decay_rate'])*np.square(dw)
+    next_w = w - (config['learning_rate']*dw)/(np.sqrt(cache)+config['epsilon'])
+    config['cache'] = cache
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -140,7 +143,20 @@ def adam(w, dw, config=None):
     # NOTE: In order to match the reference output, please modify t _before_  #
     # using it in any calculations.                                           #
     ###########################################################################
-    pass
+    m = config.get('m', np.zeros_like(w))
+    v = config.get('v', np.zeros_like(w))
+    t = config['t']
+    
+    m = config['beta1'] * m + (1 - config['beta1'])*dw
+    v = config['beta2'] * v + (1 - config['beta2'])*np.square(dw)
+    m_bias = m / (1 - config['beta1']**(t+1))
+    v_bias = v / (1 - config['beta2']**(t+1))
+    
+    step = (config['learning_rate']*m_bias) / ((np.sqrt(v_bias) + config['epsilon']))
+    next_w = w - step
+    config['m'] = m
+    config['v'] = v
+    config['t'] = t + 1
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
