@@ -243,14 +243,8 @@ def batchnorm_backward(dout, cache):
     dx_hat = dout*gamma
     dvar = np.sum(dx_hat*(x-sample_mean)*((sample_var+eps)**(-1.5))*(-0.5), axis=0)
     dmean = np.sum(dx_hat/(-np.sqrt(sample_var+eps)), axis=0) + dvar*(np.sum(x-sample_mean, axis=0))*(-2/batch_size)
-    
-    a = dx_hat/(np.sqrt(sample_var+eps))
-    c = dvar*(x-sample_mean)*(2/batch_size)
-    b = dmean/batch_size
-#    print('a',a)
-    print('b',b.shape, b)
-#    print('c',c.shape, c)
-    dx = a + b + c
+
+    dx = dx_hat/(np.sqrt(sample_var+eps)) + dvar*(x-sample_mean)*(2/batch_size) + dmean/batch_size
     dgamma = np.sum(dout*x_hat, axis=0)
     dbeta = np.sum(dout, axis=0)
     ###########################################################################
@@ -294,33 +288,16 @@ def batchnorm_backward_alt(dout, cache):
     dvar = 0.5/std
     
     dvar_dx = (2/m)*(x_mean_shift)
-    dmean_dx = -1/m
+    dmean_dx = 1/m
+    dvar_dmean = np.sum((-2/m)*(x_mean_shift), axis=0)
+
+    dl_dxmeanshift = dout*dxhat*dxmeanshift
+    dl_dvar = np.sum(dout*dxhat*dstd*dvar, axis=0)    
     
-    a = dout*dxhat*dxmeanshift
-    b = dout*dxhat*dxmeanshift*dmean_dx
-    c = np.sum(dout*dxhat*dstd*dvar, axis=0)*dvar_dx
-    
-#    print('a',a)
-    print('b',b.shape, b)
-#    print('c',c.shape, c)
-    
-    dx = a + b + c
+    dx = dl_dxmeanshift + dl_dvar*dvar_dx + np.sum(-dl_dxmeanshift*dmean_dx,axis=0) + dl_dvar*dvar_dmean*dmean_dx
     dgamma = np.sum(dout*x_hat, axis=0)
     dbeta = np.sum(dout, axis=0)
 
-    ##dout*gamma*(1/np.sqrt(sample_var+eps))
-    ##dout*gamma*(1/np.sqrt(sample_var+eps))*(-1/m)
-    ##dout*gamma*-(x_mean_shift)/(sample_var+eps)/(2*np.sqrt(sample_var+eps))*(2/m)*(x_mean_shift)s
-
-    ##dx_hat/(np.sqrt(sample_var+eps))
-    ##dvar*(x-sample_mean)*(2/batch_size)
-    ##dmean/m
-
-#    dx_hat = dout*gamma
-#    dvar = np.sum(dx_hat*(x-sample_mean)*((sample_var+eps)**(-1.5))*(-0.5), axis=0)
-#    dmean = np.sum(dx_hat/(-np.sqrt(sample_var+eps)), axis=0) + dvar*(np.sum(x-sample_mean, axis=0))*(-2/batch_size)    
-
-#    dx = dx_hat/(np.sqrt(sample_var+eps)) + dvar*(x-sample_mean)*(2/batch_size) + dmean/batch_size
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
