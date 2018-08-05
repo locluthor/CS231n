@@ -278,7 +278,28 @@ def batchnorm_backward_alt(dout, cache):
     # should be able to compute gradients with respect to the inputs in a     #
     # single statement; our implementation fits on a single 80-character line.#
     ###########################################################################
-    pass
+    x, x_hat, gamma, sample_mean, sample_var, eps = cache
+    m = x.shape[0]
+    x_mean_shift = x - sample_mean
+    
+    dxhat = gamma
+    dxmeanshift = 1/np.sqrt(sample_var+eps)
+    dstd = -x_mean_shift/(sample_var+eps)
+    dvar = 1/(2*np.sqrt(sample_var+eps))
+    
+    dvar_dx = (2/m)*(x_mean_shift)
+    dmean_dx = -1/m
+    
+    dx = dout*dxhat*(dxmeanshift + dxmeanshift*dmean_dx + dstd*dvar*dvar_dx)
+    dgamma = np.sum(dout*x_hat, axis=0)
+    dbeta = np.sum(dout, axis=0)
+    
+#    dx_hat = dout*gamma
+#    dvar = np.sum(dx_hat*(x-sample_mean)*((sample_var+eps)**(-1.5))*(-0.5), axis=0)
+#    dmean = np.sum(dx_hat/(-np.sqrt(sample_var+eps)), axis=0) + dvar*(np.sum(x-sample_mean, axis=0))*(-2/batch_size)
+#    
+#
+#    dx = dx_hat/(np.sqrt(sample_var+eps)) + dvar*(x-sample_mean)*(2/batch_size) + dmean/batch_size
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
