@@ -268,21 +268,28 @@ class FullyConnectedNet(object):
         # layer, etc.                                                              #
         ############################################################################
         caches = []
-#        input_layer = None
-#        hidden_layer = None
+        input_layer = None
+        hidden_layer = None
+        forward_pass = None
         for i in range(self.num_layers):  # forward pass except output layer
             W = self.params['W' + str(i+1)]
             b = self.params['b' + str(i+1)]
             
-            
-            
             if i == 0:
-                H, fcache = affine_relu_forward(X, W, b)
-            elif i == self.num_layers - 1:
-                scores, fcache = affine_forward(H, W, b)
+                input_layer = X
             else:
-                H, fcache = affine_relu_forward(H, W, b)
+                input_layer = hidden_layer
+                
+            if i == self.num_layers-1:
+                forward_pass = affine_forward
+            else:
+                forward_pass = affine_relu_forward
+                
+            hidden_layer, fcache = forward_pass(input_layer, W, b)
             caches.append(fcache)
+            
+            
+        scores = hidden_layer ## scores is output layer            
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
