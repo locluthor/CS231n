@@ -183,18 +183,37 @@ class FullyConnectedNet(object):
         # beta2, etc. Scale parameters should be initialized to ones and shift     #
         # parameters should be initialized to zeros.                               #
         ############################################################################
+        w_height, w_width = (0,0)
+        
         for i in range(self.num_layers):
             keyW = 'W' + str(i+1)
             keyb = 'b' + str(i+1)
-            if i == 0:
-                self.params[keyW] = np.random.randn(input_dim, hidden_dims[i]) * weight_scale
-                self.params[keyb] = np.zeros(hidden_dims[i])
-            elif i == self.num_layers - 1:
-                self.params[keyW] = np.random.randn(hidden_dims[i-1], num_classes) * weight_scale
-                self.params[keyb] = np.zeros(num_classes)
+            
+            if self.normalization=='batchnorm':
+                keygamma = 'gamma' + str(i+1)
+                keybeta = 'beta' + str(i+1)
+                
+            if i == 0: # first layer take input X
+                w_height = input_dim
             else:
-                self.params[keyW] = np.random.randn(hidden_dims[i-1], hidden_dims[i]) * weight_scale
-                self.params[keyb] = np.zeros(hidden_dims[i])
+                w_height= hidden_dims[i-1]
+                
+            if i == self.num_layers -1 :
+                w_width = num_classes
+            else:
+                w_width = hidden_dims[i]
+                
+            self.params[keyW] = np.random.randn(w_height, w_width) * weight_scale
+            self.params[keyb] = np.zeros(w_width)
+#            if i == 0:
+#                self.params[keyW] = np.random.randn(input_dim, hidden_dims[i]) * weight_scale
+#                self.params[keyb] = np.zeros(hidden_dims[i])
+#            elif i == self.num_layers - 1:
+#                self.params[keyW] = np.random.randn(hidden_dims[i-1], num_classes) * weight_scale
+#                self.params[keyb] = np.zeros(num_classes)
+#            else:
+#                self.params[keyW] = np.random.randn(hidden_dims[i-1], hidden_dims[i]) * weight_scale
+#                self.params[keyb] = np.zeros(hidden_dims[i])
                 
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -255,9 +274,14 @@ class FullyConnectedNet(object):
         # layer, etc.                                                              #
         ############################################################################
         caches = []
-        for i in range(self.num_layers):
+#        input_layer = None
+#        hidden_layer = None
+        for i in range(self.num_layers):  # forward pass except output layer
             W = self.params['W' + str(i+1)]
             b = self.params['b' + str(i+1)]
+            
+            
+            
             if i == 0:
                 H, fcache = affine_relu_forward(X, W, b)
             elif i == self.num_layers - 1:
