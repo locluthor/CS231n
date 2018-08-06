@@ -188,10 +188,6 @@ class FullyConnectedNet(object):
         for i in range(self.num_layers):
             keyW = 'W' + str(i+1)
             keyb = 'b' + str(i+1)
-            
-            if self.normalization=='batchnorm':
-                keygamma = 'gamma' + str(i+1)
-                keybeta = 'beta' + str(i+1)
                 
             if i == 0: # first layer take input X
                 w_height = input_dim
@@ -205,16 +201,14 @@ class FullyConnectedNet(object):
                 
             self.params[keyW] = np.random.randn(w_height, w_width) * weight_scale
             self.params[keyb] = np.zeros(w_width)
-#            if i == 0:
-#                self.params[keyW] = np.random.randn(input_dim, hidden_dims[i]) * weight_scale
-#                self.params[keyb] = np.zeros(hidden_dims[i])
-#            elif i == self.num_layers - 1:
-#                self.params[keyW] = np.random.randn(hidden_dims[i-1], num_classes) * weight_scale
-#                self.params[keyb] = np.zeros(num_classes)
-#            else:
-#                self.params[keyW] = np.random.randn(hidden_dims[i-1], hidden_dims[i]) * weight_scale
-#                self.params[keyb] = np.zeros(hidden_dims[i])
+
+            if self.normalization=='batchnorm':
+                keygamma = 'gamma' + str(i+1)
+                keybeta = 'beta' + str(i+1)
                 
+                if i == self.num_layers -1 : continue
+                self.params[keygamma] = np.ones(w_width)
+                self.params[keybeta] = np.zeros(w_width)                                            
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
