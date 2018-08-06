@@ -271,21 +271,33 @@ class FullyConnectedNet(object):
         input_layer = None
         hidden_layer = None
         forward_pass = None
+        arguments = None
         for i in range(self.num_layers):  # forward pass except output layer
             W = self.params['W' + str(i+1)]
             b = self.params['b' + str(i+1)]
+            
             
             if i == 0:
                 input_layer = X
             else:
                 input_layer = hidden_layer
-                
+            
+            arguments = [input_layer, W, b]
+            
             if i == self.num_layers-1:
                 forward_pass = affine_forward
             else:
-                forward_pass = affine_relu_forward
-                
-            hidden_layer, fcache = forward_pass(input_layer, W, b)
+                if self.normalization=='batchnorm':
+                    forward_pass = affine_batchnorm_relu_forward
+                    gamma = self.params['gamma' + str(i+1)]
+                    beta = self.params['beta' + str(i+1)]
+                    arguments.append(gamma)
+                    arguments.append(beta)
+                    arguments.append(self.bn_params[i])
+                else:
+                    forward_pass = affine_relu_forward
+                    
+            hidden_layer, fcache = forward_pass(*arguments)
             caches.append(fcache)
             
             
@@ -317,8 +329,18 @@ class FullyConnectedNet(object):
         loss += 0.5*reg_loss        
         
         dH, grads['W'+str(self.num_layers)], grads['b'+str(self.num_layers)] = affine_backward(dscores, caches[-1])
+        
+        
         for i in range(self.num_layers - 1, 0, -1):
-            dH, grads['W'+str(i)], grads['b'+str(i)] = affine_relu_backward(dH, caches[i-1])
+            keyW = 'W'+str(i)
+            keyb = 'b'+str(i)
+            
+            if self.normalization=='batchnorm':
+                keygamma = 'gamma'+str(i)
+                keybeta = 'beta'+str(i)
+                dH, grads[keyW], grads[keyb], grads[keygamma], grads[keybeta] = affine_batchnorm_relu_backward(dH, caches[i-1]) 
+            else:
+                dH, grads[keyW], grads[keyb] = affine_relu_backward(dH, caches[i-1])
             
         for i in range(self.num_layers):
             grads['W'+str(i+1)] += self.reg * self.params['W'+str(i+1)]
