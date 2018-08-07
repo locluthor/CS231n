@@ -339,7 +339,17 @@ def layernorm_forward(x, gamma, beta, ln_param):
     # transformations you could perform, that would enable you to copy over   #
     # the batch norm code and leave it almost unchanged?                      #
     ###########################################################################
-    pass
+    sample_mean = np.mean(x, axis=1, keepdims=True)
+    sample_var = np.var(x, axis=1, keepdims=True)
+        
+        
+    x_hat = (x - sample_mean) / (np.sqrt(sample_var + eps))
+    out = gamma*x_hat + beta
+    
+        
+    cache = (x, x_hat, gamma, sample_mean, sample_var, eps)
+    
+    
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -370,7 +380,27 @@ def layernorm_backward(dout, cache):
     # implementation of batch normalization. The hints to the forward pass    #
     # still apply!                                                            #
     ###########################################################################
-    pass
+    x, x_hat, gamma, sample_mean, sample_var, eps = cache
+    m, d = x.shape
+    
+    x_mean_shift = x - sample_mean
+    std = np.sqrt(sample_var+eps)
+    
+    dxhat = gamma
+    dxmeanshift = 1/std
+    dstd = -x_mean_shift/(sample_var+eps)
+    dvar = 0.5/std
+    
+    dvar_dx = (2/d)*(x_mean_shift)
+    dmean_dx = 1/d
+    dvar_dmean = np.sum((-2/d)*(x_mean_shift), axis=1, keepdims=True)
+
+    dl_dxmeanshift = dout*dxhat*dxmeanshift
+    dl_dvar = np.sum(dout*dxhat*dstd*dvar, axis=1, keepdims=True)    
+    
+    dx = dl_dxmeanshift + dl_dvar*dvar_dx + np.sum(-dl_dxmeanshift*dmean_dx,axis=1, keepdims=True) + dl_dvar*dvar_dmean*dmean_dx
+    dgamma = np.sum(dout*x_hat, axis=0)
+    dbeta = np.sum(dout, axis=0)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
