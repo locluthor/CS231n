@@ -202,7 +202,7 @@ class FullyConnectedNet(object):
             self.params[keyW] = np.random.randn(w_height, w_width) * weight_scale
             self.params[keyb] = np.zeros(w_width)
 
-            if self.normalization=='batchnorm':
+            if self.normalization=='batchnorm' or self.normalization=='layernorm':
                 keygamma = 'gamma' + str(i+1)
                 keybeta = 'beta' + str(i+1)
                 
@@ -283,17 +283,21 @@ class FullyConnectedNet(object):
                 input_layer = hidden_layer
             
             arguments = [input_layer, W, b]
-            
+
             if i == self.num_layers-1:
                 forward_pass = affine_forward
             else:
-                if self.normalization=='batchnorm':
-                    forward_pass = affine_batchnorm_relu_forward
+                if self.normalization != None:
                     gamma = self.params['gamma' + str(i+1)]
                     beta = self.params['beta' + str(i+1)]
                     arguments.append(gamma)
                     arguments.append(beta)
                     arguments.append(self.bn_params[i])
+                    
+                if self.normalization=='batchnorm':
+                    forward_pass = affine_batchnorm_relu_forward
+                elif self.normalization=='layernorm':
+                    forward_pass = affine_layernorm_relu_forward
                 else:
                     forward_pass = affine_relu_forward
                     
@@ -335,10 +339,14 @@ class FullyConnectedNet(object):
             keyW = 'W'+str(i)
             keyb = 'b'+str(i)
             
-            if self.normalization=='batchnorm':
+            if self.normalization != None:
                 keygamma = 'gamma'+str(i)
-                keybeta = 'beta'+str(i)
+                keybeta = 'beta'+str(i)                
+            
+            if self.normalization=='batchnorm':
                 dH, grads[keyW], grads[keyb], grads[keygamma], grads[keybeta] = affine_batchnorm_relu_backward(dH, caches[i-1]) 
+            elif self.normalization=='layernorm':
+                dH, grads[keyW], grads[keyb], grads[keygamma], grads[keybeta] = affine_layernorm_relu_backward(dH, caches[i-1]) 
             else:
                 dH, grads[keyW], grads[keyb] = affine_relu_backward(dH, caches[i-1])
             

@@ -130,3 +130,30 @@ def affine_batchnorm_relu_backward(dout, cache):
     dx, dw, db = affine_backward(dbn, fc_cache)
     
     return dx, dw, db, dgamma, dbeta
+
+
+def affine_layernorm_relu_forward(x, w, b, gamma, beta, bn_params):
+    """
+    Convenience layer that performs a fully connect, a layer norm, and a relu
+    """
+    
+    a, fc_cache = affine_forward(x, w, b)
+    bn, bn_cache = layernorm_forward(a, gamma, beta, bn_params)
+    out, relu_cache = relu_forward(bn)
+    
+    cache = (fc_cache, bn_cache, relu_cache)
+    
+    return out, cache
+
+def affine_layernorm_relu_backward(dout, cache):
+    """
+    Backward pass for the fc-layernorm-rely convenience layer
+    """
+    
+    fc_cache, bn_cache, relu_cache = cache
+    
+    drelu = relu_backward(dout, relu_cache)
+    dbn, dgamma, dbeta = layernorm_backward(drelu, bn_cache)
+    dx, dw, db = affine_backward(dbn, fc_cache)
+    
+    return dx, dw, db, dgamma, dbeta
