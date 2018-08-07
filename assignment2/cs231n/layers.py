@@ -278,25 +278,18 @@ def batchnorm_backward_alt(dout, cache):
     # single statement; our implementation fits on a single 80-character line.#
     ###########################################################################
     x, x_hat, gamma, sample_mean, sample_var, eps = cache
-    m = x.shape[0]
     x_mean_shift = x - sample_mean
     std = np.sqrt(sample_var+eps)
     
     dxhat = gamma
     dxmeanshift = 1/std
-    dmean = -1
     dstd = -x_mean_shift/(sample_var+eps)
     dvar = 0.5/std
     
-    dvar_dx = (2/m)*(x_mean_shift)
-    dmean_dx = 1/m
-    dvar_dmean = np.sum((-2/m)*(x_mean_shift), axis=0)
-    
-
-    dl_dxmeanshift = dout*dxhat*dxmeanshift
-    dl_dvar = np.sum(dout*dxhat*dstd*dvar, axis=0)    
-    
-    dx = dl_dxmeanshift + dl_dvar*dvar_dx + np.sum(dl_dxmeanshift*dmean*dmean_dx,axis=0) + dl_dvar*dvar_dmean*dmean_dx
+    dtemp = dout*gamma
+    dl_dxmeanshift = dtemp*dxmeanshift
+    #suppose to add this term but c = dl_dvar*dvar_dmean*dmean_dx # this is 0, ignore
+    dx = dl_dxmeanshift - np.mean(dl_dxmeanshift, axis=0) + (2)*x_mean_shift*np.mean(dtemp*dstd*dvar, axis=0)
     dgamma = np.sum(dout*x_hat, axis=0)
     dbeta = np.sum(dout, axis=0)
 
@@ -383,8 +376,6 @@ def layernorm_backward(dout, cache):
     # still apply!                                                            #
     ###########################################################################
     x, x_hat, gamma, sample_mean, sample_var, eps = cache
-    m, d = x.shape
-    
     x_mean_shift = x - sample_mean
     std = np.sqrt(sample_var+eps)
     
@@ -393,14 +384,10 @@ def layernorm_backward(dout, cache):
     dstd = -x_mean_shift/(sample_var+eps)
     dvar = 0.5/std
     
-    dvar_dx = (2/d)*(x_mean_shift)
-    dmean_dx = 1/d
-    dvar_dmean = np.sum((-2/d)*(x_mean_shift), axis=1, keepdims=True)
-
-    dl_dxmeanshift = dout*dxhat*dxmeanshift
-    dl_dvar = np.sum(dout*dxhat*dstd*dvar, axis=1, keepdims=True)    
-    
-    dx = dl_dxmeanshift + dl_dvar*dvar_dx + np.sum(-dl_dxmeanshift*dmean_dx,axis=1, keepdims=True) + dl_dvar*dvar_dmean*dmean_dx
+    dtemp = dout*gamma
+    dl_dxmeanshift = dtemp*dxmeanshift
+    #suppose to add this term but c = dl_dvar*dvar_dmean*dmean_dx # this is 0, ignore
+    dx = dl_dxmeanshift - np.mean(dl_dxmeanshift, axis=1, keepdims=True) + (2)*x_mean_shift*np.mean(dtemp*dstd*dvar, axis=1, keepdims=True)
     dgamma = np.sum(dout*x_hat, axis=0)
     dbeta = np.sum(dout, axis=0)
     ###########################################################################
