@@ -268,6 +268,7 @@ class FullyConnectedNet(object):
         # layer, etc.                                                              #
         ############################################################################
         caches = []
+        dropout_caches = []
         input_layer = None
         hidden_layer = None
         forward_pass = None
@@ -285,7 +286,8 @@ class FullyConnectedNet(object):
             arguments = [input_layer, W, b]
 
             if i == self.num_layers-1:
-                forward_pass = affine_forward
+                hidden_layer, fcache  = affine_forward(*arguments)
+                caches.append(fcache)
             else:
                 if self.normalization != None:
                     gamma = self.params['gamma' + str(i+1)]
@@ -301,8 +303,14 @@ class FullyConnectedNet(object):
                 else:
                     forward_pass = affine_relu_forward
                     
-            hidden_layer, fcache = forward_pass(*arguments)
-            caches.append(fcache)
+                hidden_layer, fcache = forward_pass(*arguments)
+                caches.append(fcache)
+                
+                if self.use_dropout:
+                    hidden_layer, dcache = dropout_forward(hidden_layer, self.dropout_param)
+                    dropout_caches.append(dcache)
+                    
+            
             
             
         scores = hidden_layer ## scores is output layer            
@@ -341,7 +349,10 @@ class FullyConnectedNet(object):
             
             if self.normalization != None:
                 keygamma = 'gamma'+str(i)
-                keybeta = 'beta'+str(i)                
+                keybeta = 'beta'+str(i)
+
+            if self.use_dropout:
+                dH = dropout_backward(dH, dropout_caches[i-1])                
             
             if self.normalization=='batchnorm':
                 dH, grads[keyW], grads[keyb], grads[keygamma], grads[keybeta] = affine_batchnorm_relu_backward(dH, caches[i-1]) 
