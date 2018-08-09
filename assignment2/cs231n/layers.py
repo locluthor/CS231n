@@ -523,13 +523,12 @@ def conv_forward_naive(x, w, b, conv_param):
     W_ = 1 + int((W + 2 * pad - WW) / stride)
     H_ = 1 + int((H + 2 * pad - HH) / stride)
     out = np.zeros((N, F, H_, W_))
-    for input_ in range(N):
-        for i in range(F):
+    for i in range(F):
             start_w = 0
             for width in range(W_):
                 start_h = 0
                 for height in range(H_):
-                    out[input_, i, height, width] = np.sum(w[i]*x_pad[input_, :, start_h:start_h+HH, start_w:start_w+WW]) + b[i]
+                    out[:, i, height, width] = np.sum(w[i]*x_pad[:, :, start_h:start_h+HH, start_w:start_w+WW], axis=(1,2,3)) + b[i]
                     start_h += stride
                 start_w += stride
     ###########################################################################
