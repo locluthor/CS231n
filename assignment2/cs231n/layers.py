@@ -563,7 +563,7 @@ def conv_backward_naive(dout, cache):
     F, _, HH, WW    = w.shape
     N, C, H, W      = x.shape
     db = np.sum(dout, axis=(0, 2, 3))
-    dx = np.zeros(x.shape)
+    dxpad = np.zeros(x_pad.shape)
     dw = np.zeros(w.shape)
     for i in range(N):
         for f in range(F):
@@ -572,12 +572,14 @@ def conv_backward_naive(dout, cache):
                 start_w = 0
                 for width in range(W):
                     dw[f] += dout[i,f,height,width]*x_pad[i,:,start_h:start_h+HH, start_w:start_w+WW]
+                    dxpad[i,:,start_h:start_h+HH,start_w:start_w+WW] += dout[i,f,height,width]*w[f]
                     start_w += stride
                 start_h += stride
         
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+    dx = dxpad[:,:,pad:-pad,pad:-pad]
     return dx, dw, db
 
 
