@@ -606,11 +606,32 @@ def max_pool_forward_naive(x, pool_param):
     ###########################################################################
     # TODO: Implement the max-pooling forward pass                            #
     ###########################################################################
-    pass
+    pool_height = pool_param.get('pool_height', 1)
+    pool_width  = pool_param.get('pool_width', 1)
+    stride      = pool_param.get('stride', 1)
+    	
+    N, C, H, W = x.shape
+    H_out = 1 + int((H - pool_height) / stride)
+    W_out = 1 + int((W - pool_width) / stride)
+    out = np.zeros((N,C,H_out,W_out))
+    mask = np.zeros(x.shape)
+    	
+    for i in range(N):
+        for c in range(C):
+            start_h = 0		
+            for h in range(H_out):
+                start_w = 0			
+                for w in range(W_out):
+                    max_idx = np.argmax(x[i,c,start_h:start_h+pool_height, start_w:start_w+pool_width], axis=0)
+                    # print(max_idx)
+                    out[i,c,h,w] = x[i,c,start_h+max_idx[0], start_w+max_idx[1]]
+                    mask[i,c,start_h+max_idx[0], start_w+max_idx[1]] = 1
+                    start_w += stride
+                start_h += stride					
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
-    cache = (x, pool_param)
+    cache = (mask, pool_param)
     return out, cache
 
 
@@ -629,8 +650,26 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     # TODO: Implement the max-pooling backward pass                           #
     ###########################################################################
-    pass
-    ###########################################################################
+    mask, pool_param = cache
+    pool_height = pool_param.get('pool_height', 1)
+    pool_width  = pool_param.get('pool_width', 1)
+    stride      = pool_param.get('stride', 1)    
+    dx = np.zeros(mask.shape)
+   
+    N, C, W, H = mask.shape
+    H_out = 1 + int((H - pool_height) / stride)
+    W_out = 1 + int((W - pool_width) / stride) 
+    
+    for i in range(N):
+        for c in range(C):
+            start_h = 0		
+            for h in range(H_out):
+                start_w = 0			
+                for w in range(W_out):
+                    dx[i,c,start_h:start_h+pool_height, start_w:start_w+pool_width] = dout[i,c,h,w]*mask[i,c,start_h:start_h+pool_height, start_w:start_w+pool_width]
+                    start_w += stride
+                start_h += stride	
+	###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return dx
