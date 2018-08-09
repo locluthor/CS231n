@@ -517,7 +517,7 @@ def conv_forward_naive(x, w, b, conv_param):
     ###########################################################################
     stride  = conv_param.get('stride', 1)
     pad     = conv_param.get('pad', 0)
-    x_pad   = np.pad(x,  ((0,),(0,),(1,),(1,)), 'constant', constant_values=0)
+    x_pad   = np.pad(x,  ((0,),(0,),(pad,),(pad,)), 'constant', constant_values=0)
     F, _, HH, WW = w.shape
     N, C, H, W = x.shape
     W_ = 1 + int((W + 2 * pad - WW) / stride)
@@ -555,7 +555,26 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
-    pass
+    x, w, b, conv_param = cache
+    stride  = conv_param.get('stride', 1)
+    pad     = conv_param.get('pad', 0) 
+    
+    x_pad   = np.pad(x,  ((0,),(0,),(pad,),(pad,)), 'constant', constant_values=0)
+    F, _, HH, WW    = w.shape
+    N, C, H, W      = x.shape
+    db = np.sum(dout, axis=(0, 2, 3))
+    dx = np.zeros(x.shape)
+    dw = np.zeros(w.shape)
+    for i in range(N):
+        for f in range(F):
+            start_h = 0
+            for height in range(H):
+                start_w = 0
+                for width in range(W):
+                    dw[f] += dout[i,f,height,width]*x_pad[i,:,start_h:start_h+HH, start_w:start_w+WW]
+                    start_w += stride
+                start_h += stride
+        
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
