@@ -242,9 +242,9 @@ def batchnorm_backward(dout, cache):
     ###########################################################################
     dx_hat = dout*gamma
     dvar = np.sum(dx_hat*(x-sample_mean)*((sample_var+eps)**(-1.5))*(-0.5), axis=0)
-    dmean = np.sum(dx_hat/(-np.sqrt(sample_var+eps)), axis=0) + dvar*(np.sum(x-sample_mean, axis=0))*(-2/batch_size)
+    dmean = np.sum(dx_hat/(-np.sqrt(sample_var+eps)), axis=0) + dvar*(np.sum(x-sample_mean, axis=0))*(-2.0/batch_size)
 
-    dx = dx_hat/(np.sqrt(sample_var+eps)) + dvar*(x-sample_mean)*(2/batch_size) + dmean/batch_size
+    dx = dx_hat/(np.sqrt(sample_var+eps)) + dvar*(x-sample_mean)*(2.0/batch_size) + dmean/batch_size
     dgamma = np.sum(dout*x_hat, axis=0)
     dbeta = np.sum(dout, axis=0)
     ###########################################################################
@@ -282,14 +282,14 @@ def batchnorm_backward_alt(dout, cache):
     std = np.sqrt(sample_var+eps)
     
     dxhat = gamma
-    dxmeanshift = 1/std
+    dxmeanshift = 1.0/std
     dstd = -x_mean_shift/(sample_var+eps)
     dvar = 0.5/std
     
     dtemp = dout*gamma
     dl_dxmeanshift = dtemp*dxmeanshift
     #suppose to add this term but c = dl_dvar*dvar_dmean*dmean_dx # this is 0, ignore
-    dx = dl_dxmeanshift - np.mean(dl_dxmeanshift, axis=0) + (2)*x_mean_shift*np.mean(dtemp*dstd*dvar, axis=0)
+    dx = dl_dxmeanshift - np.mean(dl_dxmeanshift, axis=0) + (2.0)*x_mean_shift*np.mean(dtemp*dstd*dvar, axis=0)
     dgamma = np.sum(dout*x_hat, axis=0)
     dbeta = np.sum(dout, axis=0)
 
@@ -741,7 +741,11 @@ def spatial_batchnorm_backward(dout, cache):
     # vanilla version of batch normalization you implemented above.           #
     # Your implementation should be very short; ours is less than five lines. #
     ###########################################################################
-    pass
+    N, C, H, W = dout.shape
+    dx, dgamma, dbeta = batchnorm_backward_alt(dout.reshape(N, -1), cache)
+    dx = dx.reshape(N, C, H, W)
+    dgamma = np.sum(dgamma.reshape(C, H*W), axis=1)
+    dbeta  = np.sum(dbeta.reshape(C, H*W), axis=1)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
