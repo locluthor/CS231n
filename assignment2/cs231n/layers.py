@@ -708,7 +708,10 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     # vanilla version of batch normalization you implemented above.           #
     # Your implementation should be very short; ours is less than five lines. #
     ###########################################################################
-    pass
+    N, C, H, W = x.shape
+    out, cache = batchnorm_forward(x.reshape(N, -1), np.repeat(gamma, H*W), np.repeat(beta, H*W), bn_param)
+    out = out.reshape(N, C, H, W)
+    
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
