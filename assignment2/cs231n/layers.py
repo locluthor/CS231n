@@ -624,10 +624,11 @@ def max_pool_forward_naive(x, pool_param):
             for h in range(H_out):
                 start_w = 0			
                 for w in range(W_out):
-                    max_idx = np.argmax(x[i,c,start_h:start_h+pool_height, start_w:start_w+pool_width], axis=0)
-                    # print(max_idx)
-                    out[i,c,h,w] = x[i,c,start_h+max_idx[0], start_w+max_idx[1]]
-                    mask[i,c,start_h+max_idx[0], start_w+max_idx[1]] = 1
+                    block = x[i,c,start_h:start_h+pool_height, start_w:start_w+pool_width]
+                    m = np.max(block)
+                    out[i,c,h,w] = m
+                    m_h, m_w = np.where(block == m)
+                    mask[i,c,start_h+m_h[0], start_w+m_w[0]] = 1
                     start_w += stride
                 start_h += stride					
     ###########################################################################
