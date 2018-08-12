@@ -782,7 +782,16 @@ def spatial_groupnorm_forward(x, gamma, beta, G, gn_param):
     # the bulk of the code is similar to both train-time batch normalization  #
     # and layer normalization!                                                # 
     ###########################################################################
-    pass
+    N, C, H, W = x.shape
+    x = x.reshape(N, C//G, G, H, W)
+    group_mean = np.mean(x, axis=(2,3,4), keepdims=True)
+    group_var  = np.var(x, axis=(2,3,4), keepdims=True)
+    
+    x = (x - group_mean)/ (np.sqrt(group_var) + eps)
+    x = x.reshape(N, C, H, W)
+    out = x*gamma + beta
+    
+    cache = (x, gamma, group_mean, group_var, eps, G)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -808,7 +817,25 @@ def spatial_groupnorm_backward(dout, cache):
     # TODO: Implement the backward pass for spatial group normalization.      #
     # This will be extremely similar to the layer norm implementation.        #
     ###########################################################################
-    pass
+    x, gamma, group_mean, group_var, eps, G = cache
+    N, C, H, W = x.shape
+    x = x.reshape(N, C//G, G, H, W)
+    x_mean_shift = x*(np.sqrt(group_var)+eps)
+    std = np.sqrt(group_var+eps)
+    
+    dxmeanshift = 1/std
+    dstd = -x_mean_shift/(group_var+eps)
+    dvar = 0.5/std
+    
+    
+    dtemp = (dout*gamma).reshape(N, C//G, G, H, W)
+    dl_dxmeanshift = dtemp*dxmeanshift
+    #suppose to add this term but c = dl_dvar*dvar_dmean*dmean_dx # this is 0, ignore
+    dx = dl_dxmeanshift - np.mean(dl_dxmeanshift, axis=(2,3,4), keepdims=True) + (2)*x_mean_shift*np.mean(dtemp*dstd*dvar, axis=(2,3,4), keepdims=True)
+    dx = dx.reshape(N,C,H,W)
+    x = x.reshape(N,C,H,W)
+    dgamma = np.sum(dout*x, axis=(0,2,3), keepdims=True)
+    dbeta = np.sum(dout, axis=(0,2,3), keepdims=True)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
