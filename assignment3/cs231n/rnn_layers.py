@@ -192,12 +192,15 @@ def word_embedding_forward(x, W):
     - cache: Values needed for the backward pass
     """
     out, cache = None, None
+    N, T = x.shape
+    V, D = W.shape
     ##############################################################################
     # TODO: Implement the forward pass for word embeddings.                      #
     #                                                                            #
     # HINT: This can be done in one line using NumPy's array indexing.           #
     ##############################################################################
-    pass
+    out = W[x]
+    cache = (x, V)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -220,13 +223,18 @@ def word_embedding_backward(dout, cache):
     - dW: Gradient of word embedding matrix, of shape (V, D).
     """
     dW = None
+    x, V = cache
+    N, T, D = dout.shape
     ##############################################################################
     # TODO: Implement the backward pass for word embeddings.                     #
     #                                                                            #
     # Note that words can appear more than once in a sequence.                   #
     # HINT: Look up the function np.add.at                                       #
     ##############################################################################
-    pass
+    dW = np.zeros((V,D))
+    
+    for i in range(V):
+        dW[i] = np.sum(dout[x==i], axis=0)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -363,12 +371,12 @@ def lstm_backward(dh, cache):
     - dWx: Gradient of input-to-hidden weight matrix of shape (D, 4H)
     - dWh: Gradient of hidden-to-hidden weight matrix of shape (H, 4H)
     - db: Gradient of biases, of shape (4H,)
+    # You should use the lstm_step_backward function that you just defined.     #
+    #############################################################################
     """
     dx, dh0, dWx, dWh, db = None, None, None, None, None
     #############################################################################
     # TODO: Implement the backward pass for an LSTM over an entire timeseries.  #
-    # You should use the lstm_step_backward function that you just defined.     #
-    #############################################################################
     pass
     ##############################################################################
     #                               END OF YOUR CODE                             #
