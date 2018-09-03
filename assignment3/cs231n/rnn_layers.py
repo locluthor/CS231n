@@ -278,11 +278,19 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     - cache: Tuple of values needed for backward pass.
     """
     next_h, next_c, cache = None, None, None
+    N, H = prev_h.shape
     #############################################################################
     # TODO: Implement the forward pass for a single timestep of an LSTM.        #
     # You may want to use the numerically stable sigmoid implementation above.  #
     #############################################################################
-    pass
+    A = np.dot(x, Wx) + np.dot(prev_h, Wh) + b
+    i, f, o = sigmoid(A[:,0:H]), sigmoid(A[:,H:2*H]), sigmoid(A[:, 2*H:3*H])
+    g = np.tanh(A[:,3*H:4*H])
+    
+    next_c = f*prev_c + i*g
+    next_h = o*np.tanh(next_c)
+    
+    cache = (next_h, next_c, i, f, o, g, prev_h, prev_c, Wh, Wx, x)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -314,7 +322,51 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
     # HINT: For sigmoid and tanh you can compute local derivatives in terms of  #
     # the output value from the nonlinearity.                                   #
     #############################################################################
-    pass
+    N, H = dnext_h.shape
+    next_h, next_c, i, f, o, g, prev_h, prev_c, Wh, Wx, x = cache
+    
+    dprev_c = dnext_c*f + dnext_h*o*(1-np.tanh(next_c)**2)*f
+    
+    ### x have 5 backward paths on computational graph
+    
+    df  = dnext_c*prev_c*f*(1-f) + dnext_h*o*(1-np.tanh(next_c)**2)*prev_c*f*(1-f)
+    di  = dnext_c*g*i*(1-i) + dnext_h*o*(1-np.tanh(next_c)**2)*g*i*(1-i)
+    dg  = dnext_c*i*(1-g**2) + dnext_h*o*(1-np.tanh(next_c)**2)*i*(1-g**2)
+    do  = dnext_h*np.tanh(next_c)*o*(1-o)
+    
+    dx1 = np.dot(df,Wx[:,H:2*H].T)
+    dx2 = np.dot(di, Wx[:,0:H].T)
+    dx3 = np.dot(dg, Wx[:,3*H:4*H].T)
+    dx4 = np.dot(do, Wx[:,2*H:3*H].T)
+    dx = dx1 + dx2 + dx3 + dx4
+    ###  prev_h also have 5 backward paths on computational graph
+    
+    dprevh1 = np.dot(df, Wh[:,H:2*H].T)
+    dprevh2 = np.dot(di, Wh[:,0:H].T)
+    dprevh3 = np.dot(dg, Wh[:,3*H:4*H].T)
+    dprevh4 = np.dot(do, Wh[:,2*H:3*H].T)
+    dprev_h = dprevh1 + dprevh2 + dprevh3 + dprevh4
+    
+    ### dWx and dWh also similar to dx and dprev_h
+    dwx1 = np.dot(x.T, di)
+    dwx2 = np.dot(x.T, df)
+    dwx3 = np.dot(x.T, do)
+    dwx4 = np.dot(x.T, dg)
+    dWx  = np.column_stack((dwx1, dwx2, dwx3, dwx4))
+    
+    dwh1 = np.dot(prev_h.T, di)
+    dwh2 = np.dot(prev_h.T, df)
+    dwh3 = np.dot(prev_h.T, do)
+    dwh4 = np.dot(prev_h.T, dg)
+    dWh  = np.column_stack((dwh1, dwh2, dwh3, dwh4))
+
+    ###
+    db1 = np.sum(di, axis=0, keepdims=True)
+    db2 = np.sum(df, axis=0, keepdims=True)
+    db3 = np.sum(do, axis=0, keepdims=True)
+    db4 = np.sum(dg, axis=0, keepdims=True)
+    db  = np.column_stack((db1, db2, db3, db4))
+    
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
