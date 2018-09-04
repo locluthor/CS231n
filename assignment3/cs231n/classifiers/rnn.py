@@ -230,10 +230,13 @@ class CaptioningRNN(object):
 #         initial first hidden state and first input word to <START>
         h, _ = affine_forward(features, W_proj, b_proj)
         x = self._start * np.ones((N, 1), dtype=np.int32)
-        
+        c = np.zeros_like(h)
         for i in range(max_length):
             x_embed, _ = word_embedding_forward(x, W_embed)
-            h, _ = rnn_step_forward(x_embed.reshape(N,-1), h, Wx, Wh, b)
+            if self.cell_type == 'rnn':
+                h, _ = rnn_step_forward(x_embed.reshape(N,-1), h, Wx, Wh, b)
+            elif self.cell_type == 'lstm':
+                h, c, _ = lstm_step_forward(x_embed.reshape(N,-1), h, c, Wx, Wh, b)
             scores, _ = temporal_affine_forward(h.reshape(N,1,-1), W_vocab, b_vocab)
             x = np.argmax(scores.reshape(N,-1), axis=1)
             captions[:, i] = x
